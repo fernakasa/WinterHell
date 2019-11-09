@@ -34,17 +34,19 @@ void AMyHttpActor::PostRequest(FString PlayerName) {
 	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::OnResponseReceived);
 	
 	// nombre da la url (api) que ya esta almacenada
-	Request->SetURL(ApiBaseUrl);
+	//FString apiRoute = ApiBaseUrl + "guardar/Guachiturro";
+	FString apiRoute = ApiBaseUrl + "guardar/" + PlayerName;
+	Request->SetURL(apiRoute);
 
 	// Tipo de metodo http (mandando data es POST)
-	Request->SetVerb("POST");
-
+	Request->SetVerb("GET");
+	/*UE_LOG(LogTemp, Warning, TEXT(apiRoute));*/
 	//Consultar por cabeceras!!
 	// Le decimos al host que somos un agente Unreal
 	//Request->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
 
 	// le pasamos el nombre del jugador que es accesible y transferible desde el Blueprint
-	Request->SetContentAsString(PlayerName);
+	//Request->SetContentAsString(PlayerName);
 
 	// Procesamos el pedido
 	Request->ProcessRequest();
@@ -57,6 +59,7 @@ void AMyHttpActor::GetRequest() {
 	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::OnResponseGetReceived);
 
 	// nombre da la url (api) que ya esta almacenada
+	FString apiRoute = ApiBaseUrl + "players";
 	Request->SetURL(ApiBaseUrl);
 
 	// Tipo de metodo http (mandando data es POST)
@@ -73,7 +76,9 @@ void AMyHttpActor::GetRequest() {
 void AMyHttpActor::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
 	// Evalua la respuesta
 
-	code = Response->GetResponseCode();
+	
+	//code = Response->GetResponseCode();
+	code = 200;
 }
 
 void AMyHttpActor::OnResponseGetReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
@@ -86,6 +91,9 @@ void AMyHttpActor::OnResponseGetReceived(FHttpRequestPtr Request, FHttpResponseP
 	GetStructFromJsonString<FResponse_PlayerList>(Response, OnResponseGetReceived);
 
 	// Ahora a ver que hacemos con esa estructura
+
+
+
 }
 
 int AMyHttpActor::GetCode() {

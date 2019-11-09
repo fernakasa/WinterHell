@@ -35,7 +35,8 @@ private:
 	FHttpModule* Http;
 
 	// nombre de la API que nos tienen que dar
-	FString ApiBaseUrl = "";
+	FString ApiBaseUrl = "localhost:8081/api/WH/";
+
 
 	// cabeza de autorizacion
 	// = TEXT("User-Agent"), "X-UnrealEngine-Agent" para agentes unreal
@@ -48,6 +49,7 @@ private:
 
 
 public:
+	
 	UPROPERTY() int code;
 
 	UFUNCTION(BlueprintCallable)
