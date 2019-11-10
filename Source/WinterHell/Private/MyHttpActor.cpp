@@ -21,15 +21,57 @@ void AMyHttpActor::BeginPlay()
 // Metodo de prueba para chequear interconexion BP + C++
 FString AMyHttpActor::TestHelloWorld(FString PlayerName) {
 	FString name = PlayerName;
+
 	return name;
 }
 
 
+TSharedRef<IHttpRequest> AMyHttpActor::RequestWithRoute(FString Subroute) {
+	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+	Request->SetURL(ApiBaseUrl + Subroute);
+	SetRequestHeaders(Request);
+	return Request;
+}
 
-// Metodo para hacer un post request
+TSharedRef<IHttpRequest> AMyHttpActor::GetRequest(FString Subroute) {
+	TSharedRef<IHttpRequest> Request = RequestWithRoute(Subroute);
+	Request->SetVerb("GET");
+	return Request;
+}
+
+void AMyHttpActor::Send(TSharedRef<IHttpRequest>& Request) {
+	Request->ProcessRequest();
+}
+
+bool AMyHttpActor::ResponseIsValid(FHttpResponsePtr Response, bool bWasSuccessful) {
+	if (!bWasSuccessful || !Response.IsValid()) return false;
+	if (EHttpResponseCodes::IsOk(Response->GetResponseCode())) return true;
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Http Response returned error code: %d"), Response->GetResponseCode());
+		return false;
+	}
+}
+
+
+bool AMyHttpActor::TestApiConn() {
+	TSharedRef<IHttpRequest> Request = GetRequest("players");
+	bool response = Request->OnProcessRequestComplete().BindUObject(this, &AHttpService::TestResponse);
+	Send(Request);
+	return response;
+}
+
+
+void AMyHttpActor::TestResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
+	if (!ResponseIsValid(Response, bWasSuccessful)) return;	
+}
+
+
+// Metodo para insertar el nombre del jugador y sumar uno
 void AMyHttpActor::PostRequest(FString PlayerName) {
+
 	// crear el request usando el modulo FHttpModule
 	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+
 	// bindear la funcion que se va a disparar cuando recibimos la respuesta del process request
 	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::OnResponseReceived);
 	
