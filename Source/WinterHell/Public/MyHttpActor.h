@@ -34,14 +34,15 @@ private:
 	// unreal http implementacion, el modulo, para crear objetos request
 	FHttpModule* Http;
 
-	// nombre de la API que nos tienen que dar
+	// ruta de la API
 	FString ApiBaseUrl = "localhost:8081/api/WH/";
 
+	EHttpResponseCodes code;
 
 	// cabeza de autorizacion
 	// = TEXT("User-Agent"), "X-UnrealEngine-Agent" para agentes unreal
 	// = "Content-Type", TEXT("application/json" para archivos JSON
-	FString AuthorizationHeader = TEXT("Authorization");
+	//FString AuthorizationHeader = TEXT("Authorization");
 
 	//template para la estructura JSON que me va a devolver la BD
 	template <typename StructType>
@@ -49,15 +50,22 @@ private:
 
 
 public:
-	
-	UPROPERTY() int code;
-
-	UFUNCTION(BlueprintCallable)
-	int GetCode();
-
 	// Metodo para testear que el actor c++ tome un parametro del blueprint y lo devuelva (bypass)
 	UFUNCTION(BlueprintCallable)
 	FString TestHelloWorld(FString PlayerName);
+
+	UFUNCTION(BlueprintCallable)
+	bool TestApiConn();
+
+
+
+	TSharedRef<IHttpRequest> RequestWithRoute(FString Subroute);
+	TSharedRef<IHttpRequest> GetRequest(FString Subroute);
+	void Send(TSharedRef<IHttpRequest>& Request);
+	bool ResponseIsValid(FHttpResponsePtr Response, bool bWasSuccessful);
+
+
+
 
 	// Funcion POST request
 	UFUNCTION(BlueprintCallable)
