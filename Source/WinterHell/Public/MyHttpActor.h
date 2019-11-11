@@ -14,12 +14,34 @@
 // estructura para recibir (listado jugadores y veces que jugaron)
 
 USTRUCT(BlueprintType)
-struct FResponse_PlayerList {
+struct  FResponse_PlayerList {
 	GENERATED_BODY()
-	UPROPERTY() FString name;
-	UPROPERTY() FString plays;
+
+	UPROPERTY() FString jugadorId;
+	UPROPERTY() FString nickname;
+	UPROPERTY() FString cantidadJugadas;
 
 	FResponse_PlayerList() {}
+};
+
+//USTRUCT(BlueprintType)
+//struct  FResponse_TotalPlayers {
+//	GENERATED_BODY()
+//
+//	UPROPERTY() TArray<FResponse_PlayerList> players;
+//	
+//
+//	FResponse_TotalPlayers() {}
+//};
+
+USTRUCT(BlueprintType)
+struct  FResponse_TotalPlayers {
+	GENERATED_BODY()
+
+	UPROPERTY() FString number;
+
+
+	FResponse_TotalPlayers() {}
 };
 
 
@@ -38,22 +60,37 @@ private:
 	// atributo que guarda el resultado de las consultas (true o false)
 	bool requestSuccess;
 
-	// cabeza de autorizacion
-	// = TEXT("User-Agent"), "X-UnrealEngine-Agent" para agentes unreal
-	// = "Content-Type", TEXT("application/json" para archivos JSON
-	//FString AuthorizationHeader = TEXT("Authorization");
+	UPROPERTY()
+	TArray<FString> PlayersNames;
+
+	UPROPERTY()
+	TArray<FString> PlayersPlays;
+
+	FString Number;
 
 	//template para la estructura JSON que me va a devolver la BD
 	template <typename StructType>
 	void GetStructFromJsonString(FHttpResponsePtr Response, StructType& StructOutput);
 
+		
+	// cabeza de autorizacion
+	// = TEXT("User-Agent"), "X-UnrealEngine-Agent" para agentes unreal
+	// = "Content-Type", TEXT("application/json" para archivos JSON
+	//FString AuthorizationHeader = TEXT("Authorization");
 
-public:
-	// Sets default values for this actor's properties
-	AMyHttpActor();
+public:	
+	UFUNCTION(BlueprintCallable)
+	void EmptyLists();
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetPlayersNames();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetPlayersPlays();
+
+	void SetPlayersNames(FString value);
+	void SetPlayersPlays(FString value);
+		
 
 	// Set de requestSucces
 	void SetRequestSuccess(bool value);
@@ -75,6 +112,26 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InsertPlayer(FString PlayerName); 
 
+	UFUNCTION(BlueprintCallable)
+	void GetPlayersList();
+
+	void PlayerListResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+
+
+
+
+	UFUNCTION(BlueprintCallable)
+	void GetNumberOfPlayers();
+	void GetNumberOfPlayersResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetNumber() {
+		int32 number = FCString::Atoi(*Number);
+		return number;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	void GetPlayersForceList();
 
 	//******************************************************************************************************//
 
@@ -94,28 +151,10 @@ public:
 
 	//*******************************************************************************************************//
 
-	
+	// Sets default values for this actor's properties
+	AMyHttpActor();
 
-
-
-
-
-
-
-
-	//// Funcion POST request
-	//UFUNCTION(BlueprintCallable)
-	//void PostRequest(FString PlayerName);
-
-	//// Funcion GET
-	//UFUNCTION(BlueprintCallable)
-	//void GetRequest();
-
-
-	//// Funcion que toma codigo de repuesta del request
-	//void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-	//void OnResponseGetReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-
-	
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;   	  	
 
 };

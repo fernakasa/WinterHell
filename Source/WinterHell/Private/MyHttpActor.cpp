@@ -1,5 +1,8 @@
+#include "JsonUtilities.h"
 #include "WinterHell.h"
 #include "MyHttpActor.h"
+
+
 
 
 
@@ -15,6 +18,8 @@ void AMyHttpActor::BeginPlay()
 {
 	Super::BeginPlay();
 	TestApiConn();
+	//SetPlayersNames();
+	//SetPlayersPlays();
 }
 
 //*******************************************************************************************//
@@ -65,6 +70,22 @@ bool AMyHttpActor::GetRequestSuccess() {
 	return requestSuccess;
 }
 
+TArray<FString> AMyHttpActor::GetPlayersNames() {
+	return PlayersNames;
+}
+
+TArray<FString> AMyHttpActor::GetPlayersPlays() {
+	return PlayersPlays;
+}
+
+//void AMyHttpActor::SetPlayersNames(FString value) {
+//	PlayersNames.Add(TEXT(value));
+//}
+//
+//void AMyHttpActor::SetPlayersPlays(FString value) {
+//	PlayersPlays.Add(TEXT(value));
+//}
+
 void AMyHttpActor::TestApiConn() {
 	// Llamo a GetRequest pasandole el nombre de mi controlador
 	// GetRequest va a llamar a InitRequest pasandole el tipo de pedido (GET)
@@ -93,77 +114,72 @@ void AMyHttpActor::InsertPlayer(FString PlayerName) {
 }
 
 
-// Metodo para insertar el nombre del jugador y sumar uno
-//void AMyHttpActor::PostRequest(FString PlayerName) {
-//
-//	// crear el request usando el modulo FHttpModule
-//	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
-//
-//	// bindear la funcion que se va a disparar cuando recibimos la respuesta del process request
-//	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::OnResponseReceived);
-//	
-//	// nombre da la url (api) que ya esta almacenada
-//	//FString apiRoute = ApiBaseUrl + "guardar/Guachiturro";
-//	FString apiRoute = ApiBaseUrl + "guardar/" + PlayerName;
-//	Request->SetURL(apiRoute);
-//
-//	// Tipo de metodo http (mandando data es POST)
-//	Request->SetVerb("GET");
-//	/*UE_LOG(LogTemp, Warning, TEXT(apiRoute));*/
-//	//Consultar por cabeceras!!
-//	// Le decimos al host que somos un agente Unreal
-//	//Request->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
-//
-//	// le pasamos el nombre del jugador que es accesible y transferible desde el Blueprint
-//	//Request->SetContentAsString(PlayerName);
-//
-//	// Procesamos el pedido
-//	Request->ProcessRequest();
-//}
-//
-//void AMyHttpActor::GetRequest() {
-//	// crear el request usando el modulo FHttpModule
-//	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
-//	// bindear la funcion que se va a disparar cuando recibimos la respuesta del process request
-//	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::OnResponseGetReceived);
-//
-//	// nombre da la url (api) que ya esta almacenada
-//	FString apiRoute = ApiBaseUrl + "players";
-//	Request->SetURL(ApiBaseUrl);
-//
-//	// Tipo de metodo http (mandando data es POST)
-//	Request->SetVerb("GET");
-//
-//	//Consultar por cabeceras!!
-//	// Le decimos al host que somos un agente Unreal
-//	//Request->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
-//
-//	// Procesamos el pedido
-//	Request->ProcessRequest();
-//}
-//
-//void AMyHttpActor::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-//	// Evalua la respuesta
-//
-//	
-//	//code = Response->GetResponseCode();
-//	//code = 200;
-//}
-//
-//void AMyHttpActor::OnResponseGetReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-//	// Evalua la respuesta
-//
-//	//code = Response->GetResponseCode();
-//
-//	// Guarda la estructura JSON  de la respuesta
-//	//FResponse_PlayerList OnResponseGetReceived;
-//	//GetStructFromJsonString<FResponse_PlayerList>(Response, OnResponseGetReceived);
-//
-//	// Ahora a ver que hacemos con esa estructura
-//
-//
-//
-//}
+void AMyHttpActor::GetPlayersList() {	
+	TSharedRef<IHttpRequest> Request = GetRequest("players");
+	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::PlayerListResponse);
+	SendRequest(Request);
+}
+
+void AMyHttpActor::PlayerListResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success) {
+	if (!ResponseIsValid(Response, Success)) {
+		//UE_LOG(LogTemp, Warning, TEXT("Error"));
+		return;
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Paso"));
+
+	FResponse_PlayerList ListResponse;
+	GetStructFromJsonString<FResponse_PlayerList>(Response, ListResponse);
+	
+	int32 c = 0;
+	if (c == 0) {
+		//PlayersNames.AddUnique(ListResponse.nickname);
+		PlayersNames.Add(ListResponse.nickname);
+		PlayersPlays.Add(ListResponse.cantidadJugadas);
+		c++;
+	}
+		   	
+
+	//UE_LOG(LogTemp, Warning, TEXT("Name is: %s"), *ListResponse.nickname);
+	//UE_LOG(LogTemp, Warning, TEXT("Plays is: %s"), *ListResponse.cantidadJugadas);	
+		
+}
+
+
+//****************************************************
+// Workaround para generar la lista
+void AMyHttpActor::GetPlayersForceList() {
+	GetNumberOfPlayers();
+	int32 numberPlayers = GetNumber();
+	for (size_t i = 0; i < numberPlayers; i++)
+	{
+		FString stringIndex = FString::FromInt(i);
+		TSharedRef<IHttpRequest> Request = GetRequest("playersByIndex/" + stringIndex);
+		Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::PlayerListResponse);
+		SendRequest(Request);
+	}
+
+	
+}
+
+
+//********************************
+void AMyHttpActor::GetNumberOfPlayers() {
+	TSharedRef<IHttpRequest> Request = GetRequest("number");
+	Request->OnProcessRequestComplete().BindUObject(this, &AMyHttpActor::GetNumberOfPlayersResponse);
+	SendRequest(Request);	
+}
+
+void AMyHttpActor::GetNumberOfPlayersResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success) {
+
+	Number = Response->GetContentAsString();	
+}
+
+void AMyHttpActor::EmptyLists() {
+	PlayersNames.Empty();
+	PlayersPlays.Empty();
+}
+
 
 template <typename StructType>
 void AMyHttpActor::GetStructFromJsonString(FHttpResponsePtr Response, StructType& StructOutput) {
@@ -171,4 +187,11 @@ void AMyHttpActor::GetStructFromJsonString(FHttpResponsePtr Response, StructType
 	FString JsonString = Response->GetContentAsString();
 	FJsonObjectConverter::JsonObjectStringToUStruct<StructType>(JsonString, &StructOutput, 0, 0);
 }
+
+
+
+
+
+
+
 
