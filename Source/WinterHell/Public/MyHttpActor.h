@@ -14,15 +14,35 @@
 // estructura para recibir (listado jugadores y veces que jugaron)
 
 USTRUCT(BlueprintType)
-struct FResponse_PlayerList {
+struct  FResponse_PlayerList {
 	GENERATED_BODY()
-	UPROPERTY() FString name;
-	UPROPERTY() FString plays;
+
+	UPROPERTY() FString jugadorId;
+	UPROPERTY() FString nickname;
+	UPROPERTY() FString cantidadJugadas;
 
 	FResponse_PlayerList() {}
 };
 
+//USTRUCT(BlueprintType)
+//struct  FResponse_TotalPlayers {
+//	GENERATED_BODY()
+//
+//	UPROPERTY() TArray<FResponse_PlayerList> players;
+//	
+//
+//	FResponse_TotalPlayers() {}
+//};
 
+USTRUCT(BlueprintType)
+struct  FResponse_TotalPlayers {
+	GENERATED_BODY()
+
+	UPROPERTY() FString number;
+
+
+	FResponse_TotalPlayers() {}
+};
 
 
 UCLASS()
@@ -37,53 +57,104 @@ private:
 	// ruta de la API
 	FString ApiBaseUrl = "localhost:8081/api/WH/";
 
-	EHttpResponseCodes code;
+	// atributo que guarda el resultado de las consultas (true o false)
+	bool requestSuccess;
 
-	// cabeza de autorizacion
-	// = TEXT("User-Agent"), "X-UnrealEngine-Agent" para agentes unreal
-	// = "Content-Type", TEXT("application/json" para archivos JSON
-	//FString AuthorizationHeader = TEXT("Authorization");
+	UPROPERTY()
+	TArray<FString> PlayersNames;
+
+	UPROPERTY()
+	TArray<FString> PlayersPlays;
+
+	FString Number;
 
 	//template para la estructura JSON que me va a devolver la BD
 	template <typename StructType>
 	void GetStructFromJsonString(FHttpResponsePtr Response, StructType& StructOutput);
 
+		
+	// cabeza de autorizacion
+	// = TEXT("User-Agent"), "X-UnrealEngine-Agent" para agentes unreal
+	// = "Content-Type", TEXT("application/json" para archivos JSON
+	//FString AuthorizationHeader = TEXT("Authorization");
 
-public:
+public:	
+	UFUNCTION(BlueprintCallable)
+	void EmptyLists();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetPlayersNames();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetPlayersPlays();
+
+	void SetPlayersNames(FString value);
+	void SetPlayersPlays(FString value);
+		
+
+	// Set de requestSucces
+	void SetRequestSuccess(bool value);
+
+	// Get de requestSueccess
+	// Se puede llamar desde BP
+	UFUNCTION(BlueprintCallable)
+	bool GetRequestSuccess();
+
 	// Metodo para testear que el actor c++ tome un parametro del blueprint y lo devuelva (bypass)
 	UFUNCTION(BlueprintCallable)
 	FString TestHelloWorld(FString PlayerName);
 
 	UFUNCTION(BlueprintCallable)
-	bool TestApiConn();
+	void TestApiConn();
+
+	void TestResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+
+	UFUNCTION(BlueprintCallable)
+	void InsertPlayer(FString PlayerName); 
+
+	UFUNCTION(BlueprintCallable)
+	void GetPlayersList();
+
+	void PlayerListResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
 
 
 
-	TSharedRef<IHttpRequest> RequestWithRoute(FString Subroute);
+
+	UFUNCTION(BlueprintCallable)
+	void GetNumberOfPlayers();
+	void GetNumberOfPlayersResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetNumber() {
+		int32 number = FCString::Atoi(*Number);
+		return number;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	void GetPlayersForceList();
+
+	//******************************************************************************************************//
+
+	// Metodo para incializar el request
+	TSharedRef<IHttpRequest> InitRequest(FString Subroute);
+
+	// Metodo en donde va propiamente el tipo de request y que llama a RequestWithRoute
+	// Si fuera un metodo POST habria que hacer un metodo con las consideraciones pero seguiria
+	// canalizando entre SendRequest e InitRequest
 	TSharedRef<IHttpRequest> GetRequest(FString Subroute);
-	void Send(TSharedRef<IHttpRequest>& Request);
+	
+	// Metodo que envia propiamente el request
+	void SendRequest(TSharedRef<IHttpRequest>& Request);
+
+	// Metodo que se encarga de determinar el resultado del request (la respuesta)
 	bool ResponseIsValid(FHttpResponsePtr Response, bool bWasSuccessful);
 
-
-
-
-	// Funcion POST request
-	UFUNCTION(BlueprintCallable)
-	void PostRequest(FString PlayerName);
-
-	// Funcion GET
-	UFUNCTION(BlueprintCallable)
-	void GetRequest();
-
-
-	// Funcion que toma codigo de repuesta del request
-	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-	void OnResponseGetReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+	//*******************************************************************************************************//
 
 	// Sets default values for this actor's properties
 	AMyHttpActor();
 
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void BeginPlay() override;   	  	
 
 };
